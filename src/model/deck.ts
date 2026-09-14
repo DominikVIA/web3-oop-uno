@@ -39,7 +39,7 @@ export function createDeck(initialCards: Card[]): Deck {
   return {
     cards,
     deal() {
-      return cards.pop();
+      return cards.shift();
     },
     shuffle(shuffleFn) {
       shuffleFn(cards);
