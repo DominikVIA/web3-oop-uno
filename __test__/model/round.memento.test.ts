@@ -111,7 +111,7 @@ describe("create round from valid memento", () => {
 
 describe("create finished round from memento", () => {
   it("needs a playerInTurn if the game isn't finished", () => {
-    expect(() => createRoundFromMemento({...memento, playerInTurn: undefined})).toThrowError()
+    expect(() => createRoundFromMemento({...memento, playerInTurn: undefined})).toThrow()
   })
   it("doesn't need a playerInTurn if the game is finished", () => {
     const hands =  [
@@ -142,7 +142,7 @@ describe("create round from invalid memento", () => {
             { type: 'REVERSE', color: 'GREEN' },
           ],
         ],
-    })).toThrowError()
+    })).toThrow()
   })
   it("throws less than 2 players", () => {
     expect(() => createRoundFromMemento({
@@ -154,50 +154,50 @@ describe("create round from invalid memento", () => {
             { type: 'DRAW', color: 'YELLOW' },
           ], 
         ],
-    })).toThrowError()
+    })).toThrow()
   })
   it("throws on 2 winners", () => {
     expect(() => createRoundFromMemento({
       ...memento, 
       hands: [[], [], [{type: 'WILD'}]]
-    })).toThrowError()
+    })).toThrow()
   })
   it("throws on empty discard pile", () => {
     expect(() => createRoundFromMemento({
       ...memento, 
       discardPile: []
-    })).toThrowError()
+    })).toThrow()
   })
   it("throws on non-color 'currentColor'", () => {
     expect(() => createRoundFromMemento({
       ...memento, 
-      currentColor: 'BLEU'})).toThrowError()
+      currentColor: 'BLEU'})).toThrow()
   })
   it("throws on inconsistent 'currentColor'", () => {
     expect(() => createRoundFromMemento({
       ...memento, 
       discardPile: [{type: 'SKIP', color: 'RED'}],
-      currentColor: 'BLUE'})).toThrowError()
+      currentColor: 'BLUE'})).toThrow()
   })
   it("throws on negative dealer", () => {
         expect(() => createRoundFromMemento({
       ...memento, 
-      dealer: -1})).toThrowError()
+      dealer: -1})).toThrow()
   })
   it("throws on out of bounds dealer", () => {
         expect(() => createRoundFromMemento({
       ...memento, 
-      dealer: 3})).toThrowError()
+      dealer: 3})).toThrow()
   })
   it("throws on negative 'playerInTurn'", () => {
         expect(() => createRoundFromMemento({
       ...memento, 
-      playerInTurn: -1})).toThrowError()
+      playerInTurn: -1})).toThrow()
   })
   it("throws on out of bounds 'playerInTurn'", () => {
         expect(() => createRoundFromMemento({
       ...memento, 
-      playerInTurn: 3})).toThrowError()
+      playerInTurn: 3})).toThrow()
   })
 })
 
