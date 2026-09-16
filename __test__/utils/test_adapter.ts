@@ -1,25 +1,25 @@
 import { Randomizer, Shuffler, standardRandomizer, standardShuffler } from '../../src/utils/random_utils'
 import * as deck from '../../src/model/deck'
 
-const digits = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+const DIGITS = [1, 2, 3, 4, 5, 6, 7, 8, 9] as const
 
 // Fix (or import) these types:
-type Card = any
 type Round = any
 type Game = any
 
 //Fill out the empty functions
 export function createInitialDeck(): deck.Deck {
-  const cards: Card[] = []
+  const cards: deck.Card[] = []
 
   // per color
   for (const color of deck.COLORS) {
+
     // numbered cards, single 0 and two of 1-9
     cards.push({ type: "NUMBERED", color, number: 0 });
-    for (const number of digits) {
+    DIGITS.forEach(number => {
       cards.push({ type: "NUMBERED", color, number });
       cards.push({ type: "NUMBERED", color, number });
-    }
+    });
 
     // two of each action card
     for (const type of ["SKIP", "REVERSE", "DRAW"] as const) {
@@ -61,11 +61,11 @@ function isCardColor(val: string | number): val is deck.Color {
   return isString(val) && (deck.COLORS as readonly string[]).includes(val);
 }
 
-function isCardNumber(val: string | number): val is number {
+function isCardNumber(val: string | number): val is (typeof DIGITS)[number] {
   return isNumber(val) && Number.isInteger(val) && val >= 0 && val <= 9;
 }
 
-export function parseCard(raw: Record<string, string | number>): Card {
+export function parseCard(raw: Record<string, string | number>): deck.Card {
   const { type, color, number } = raw;
 
   if (!isString(type)) {
@@ -100,7 +100,7 @@ export function createDeckFromMemento(records: Record<string, string | number>[]
 export type HandConfig = {
   players: string[]
   dealer: number
-  shuffler?: Shuffler<Card>
+  shuffler?: Shuffler<deck.Card>
   cardsPerPlayer?: number
 }
 
@@ -112,19 +112,19 @@ export function createRound({
   }: HandConfig): Round {
 }
 
-export function createRoundFromMemento(memento: any, shuffler: Shuffler<Card> = standardShuffler): Round {
+export function createRoundFromMemento(memento: any, shuffler: Shuffler<deck.Card> = standardShuffler): Round {
 }
 
 export type GameConfig = {
   players: string[]
   targetScore: number
   randomizer: Randomizer
-  shuffler: Shuffler<Card>
+  shuffler: Shuffler<deck.Card>
   cardsPerPlayer: number
 }
 
 export function createGame(props: Partial<GameConfig>): Game {
 }
 
-export function createGameFromMemento(memento: any, randomizer: Randomizer = standardRandomizer, shuffler: Shuffler<Card> = standardShuffler): Game {
+export function createGameFromMemento(memento: any, randomizer: Randomizer = standardRandomizer, shuffler: Shuffler<deck.Card> = standardShuffler): Game {
 }
