@@ -173,22 +173,22 @@ describe('fromMemento', () => {
 
   describe("from invalid Memento", () => {
     it("throws on invalid type", () => {
-      expect(() => createDeckFromMemento([{type: 'wut?'}])).toThrowError()
+      expect(() => createDeckFromMemento([{type: 'wut?'}])).toThrow()
     })
     it("throws on missing number on numbered type", () => {
-      expect(() => createDeckFromMemento([{type: 'NUMBERED', color: 'BLUE'}])).toThrowError()
+      expect(() => createDeckFromMemento([{type: 'NUMBERED', color: 'BLUE'}])).toThrow()
     })
     it("throws on missing color on numbered type", () => {
-      expect(() => createDeckFromMemento([{type: 'NUMBERED', number: 7}])).toThrowError()
+      expect(() => createDeckFromMemento([{type: 'NUMBERED', number: 7}])).toThrow()
     })
     it("throws on missing color on skip type", () => {
-      expect(() => createDeckFromMemento([{type: 'SKIP'}])).toThrowError()
+      expect(() => createDeckFromMemento([{type: 'SKIP'}])).toThrow()
     })
     it("throws on missing color on reverse type", () => {
-      expect(() => createDeckFromMemento([{type: 'REVERSE'}])).toThrowError()
+      expect(() => createDeckFromMemento([{type: 'REVERSE'}])).toThrow()
     })
     it("throws on missing color on draw type", () => {
-      expect(() => createDeckFromMemento([{type: 'DRAW'}])).toThrowError()
+      expect(() => createDeckFromMemento([{type: 'DRAW'}])).toThrow()
     })
   })
 })
