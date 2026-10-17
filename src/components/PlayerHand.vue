@@ -1,11 +1,52 @@
-<script lang="ts" setup>
-
-</script>
-
+<!-- src/components/PlayerHand.vue -->
 <template>
+  <div class="human-turn">
+    <h2>Your hand</h2>
 
+    <p v-if="hand.length === 2" class="uno-message">
+      You have 2 cards left! Say "UNO" before playing a card when you have two cards left
+    </p>
+
+    <button v-if="hand.length === 2" class="uno-button" @click="$emit('say-uno')">
+      Say UNO!
+    </button>
+
+    <div class="hand">
+      <Card
+          v-for="(card, index) in hand"
+          :key="index"
+          :card="card"
+          :disabled="!canPlay(index)"
+          @click="$emit('select-card', index)"
+      />
+    </div>
+
+    <!-- Isolated ColorPicker Component -->
+    <ColorPicker
+        v-if="pendingWildIndex !== null"
+        :colors="colors"
+        @select-color="(color) => $emit('play-wild', color)"
+    />
+
+    <button :disabled="canPlayAny" @click="$emit('draw-card')">
+      Draw Card
+    </button>
+  </div>
 </template>
 
-<style scoped>
+<script>
+import Card from './Card.vue'
+import ColorPicker from './ColorPicker.vue'
 
-</style>
+export default {
+  name: 'PlayerHand',
+  components: {Card, ColorPicker},
+  props: {
+    hand: {type: Array, required: true},
+    canPlay: {type: Function, required: true},
+    canPlayAny: {type: Boolean, required: true},
+    pendingWildIndex: {type: Number, default: null},
+    colors: {type: Array, required: true}
+  }
+}
+</script>
