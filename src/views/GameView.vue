@@ -1,6 +1,5 @@
-<!-- src/views/GameView.vue -->
 <template>
-  <section v-if="game.screen === 'game' && game.round">
+  <section v-if="game.round">
     <p>Turn: <strong>{{ game.currentPlayerName }}</strong></p>
     <p>Color: <strong>{{ game.currentColor }}</strong></p>
 
@@ -18,7 +17,6 @@
       </div>
     </div>
 
-    <!-- Dumb presentation component handling human controls -->
     <PlayerHand
         v-if="isHumanTurn"
         :can-play="(index) => game.round.canPlay(index)"
@@ -35,12 +33,7 @@
     <div v-else class="bot-turn">
       <p>Waiting for bot to play...</p>
     </div>
-  </section>
 
-  <section v-else-if="game.screen === 'result'">
-    <h2>Round ended</h2>
-    <p>Winner: <strong>{{ game.winnerName }}</strong></p>
-    <button @click="playAgain">Play Again</button>
   </section>
 </template>
 
@@ -74,6 +67,7 @@ export default {
     if (!this.game.round) {
       this.$router.push('/')
     } else {
+      this.checkAndRedirect()
       this.runBotTurn()
     }
   },
@@ -84,6 +78,12 @@ export default {
     }
   },
   methods: {
+    checkAndRedirect() {
+      if (this.game.hasEnded) {
+        this.$router.push('/result')
+      }
+    },
+
     selectCard(index) {
       if (!this.game.round || this.game.currentPlayer !== 0 || !this.game.round.canPlay(index)) return
 
@@ -94,6 +94,7 @@ export default {
       }
 
       this.game.playHumanCard(index)
+      this.checkAndRedirect()
       this.runBotTurn()
     },
 
@@ -102,18 +103,20 @@ export default {
       const index = this.pendingWildIndex
       this.pendingWildIndex = null
       this.game.playHumanCard(index, color)
+      this.checkAndRedirect()
       this.runBotTurn()
     },
 
     handleDrawCard() {
       this.game.drawCard()
+      this.checkAndRedirect()
       if (this.game.currentPlayer !== 0) {
         this.runBotTurn()
       }
     },
 
     runBotTurn() {
-      if (this.game.screen !== 'game' || !this.game.round) return
+      if (!this.game.round || this.game.hasEnded) return
 
       const playerIndex = this.game.currentPlayer
       if (playerIndex === undefined || playerIndex === 0) return
@@ -124,7 +127,7 @@ export default {
       if (legalIndices.length === 0) {
         this.game.round.draw()
         this.game.updateTrigger++
-        this.game.checkGameStatus()
+        this.checkAndRedirect()
         window.setTimeout(() => this.runBotTurn(), 300)
         return
       }
@@ -138,7 +141,7 @@ export default {
     },
 
     handleBotMessage(data) {
-      if (this.game.screen !== 'game' || !this.game.round) return
+      if (!this.game.round || this.game.hasEnded) return
 
       const playerIndex = this.game.currentPlayer
       if (playerIndex === undefined || playerIndex === 0) return
@@ -146,7 +149,7 @@ export default {
       if (data.action === 'draw') {
         this.game.round.draw()
         this.game.updateTrigger++
-        this.game.checkGameStatus()
+        this.checkAndRedirect()
         window.setTimeout(() => this.runBotTurn(), 300)
         return
       }
@@ -159,18 +162,13 @@ export default {
 
         this.game.round.play(data.index, data.color)
         this.game.updateTrigger++
-        this.game.checkGameStatus()
+        this.checkAndRedirect()
         window.setTimeout(() => this.runBotTurn(), 300)
       } catch (error) {
         console.error(error)
         this.game.updateTrigger++
-        this.game.checkGameStatus()
+        this.checkAndRedirect()
       }
-    },
-
-    playAgain() {
-      this.game.screen = 'setup'
-      this.$router.push('/')
     }
   }
 }

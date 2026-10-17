@@ -94,20 +94,20 @@ class RoundModel implements Round {
     player(i: number) {
         this.check(i);
         return this._players[i]
-    };
+    }
 
     playerHand(i: number) {
         this.check(i);
         return this.hands[i]
-    };
+    }
 
     drawPile() {
         return this.drawD
-    };
+    }
 
     discardPile() {
         return this.disc
-    };
+    }
 
     playerInTurn() {
         return this.turn
@@ -116,7 +116,7 @@ class RoundModel implements Round {
     canPlay(index: number) {
         if (this.turn === undefined || !Number.isInteger(index) || index < 0 || index >= this.hands[this.turn].length) return false;
         return this.legal(this.hands[this.turn][index], this.hands[this.turn])
-    };
+    }
 
     canPlayAny() {
         const turn = this.turn;
@@ -178,30 +178,30 @@ class RoundModel implements Round {
         this.recycle();
         if (!playable) this.advance();
         return c
-    };
+    }
 
     hasEnded() {
         return this.ended !== undefined
-    };
+    }
 
     winner() {
         return this.ended
-    };
+    }
 
     score() {
         return this.ended === undefined ? undefined : this.hands.flat().reduce((s, c) => s + cardPoints(c), 0)
-    };
+    }
 
     onEnd(cb: (e: { winner: number }) => void) {
         this.callbacks.push(cb)
-    };
+    }
 
     sayUno(i: number) {
         this.check(i);
         if (this.turn === undefined) throw Error('Round ended');
         this.said.add(i);
         this.missed.delete(i)
-    };
+    }
 
     catchUnoFailure({accused, accuser}: { accused: number, accuser: number }) {
         this.check(accused);
@@ -210,7 +210,7 @@ class RoundModel implements Round {
         this.missed.delete(accused);
         this.take(4, accused);
         return true
-    };
+    }
 
     toMemento() {
         return {
@@ -226,7 +226,7 @@ class RoundModel implements Round {
 
     private check(i: number) {
         if (!Number.isInteger(i) || i < 0 || i >= this.playerCount) throw Error('Player out of bounds')
-    };
+    }
 
     private matches(c: Card) {
         const t = this.disc.top();
@@ -238,11 +238,11 @@ class RoundModel implements Round {
 
     private legal(c: Card, h: Card[]) {
         return this.matches(c) && (c.type !== 'WILD DRAW' || !h.some(x => 'color' in x && x.color === this.current))
-    };
+    }
 
     private advance(n = 1) {
         if (this.turn !== undefined) this.turn = mod(this.turn + (this.dir === 'clockwise' ? n : -n), this.playerCount)
-    };
+    }
 
     private recycle() {
         if (this.drawD.size === 0 && this.disc.size > 1) {
@@ -253,7 +253,7 @@ class RoundModel implements Round {
             this.drawD.shuffle(this.shuffler);
             this.disc = createDeck([top])
         }
-    };
+    }
 
     private take(n: number, p: number) {
         for (let i = 0; i < n; i++) {

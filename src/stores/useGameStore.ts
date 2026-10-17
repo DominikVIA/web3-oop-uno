@@ -5,8 +5,6 @@ import type {Card, Color} from '../model/deck'
 
 export const useGameStore = defineStore('game', {
     state: () => ({
-        screen: 'setup' as 'setup' | 'game' | 'result',
-        botCount: 1,
         round: null as Round | null,
         updateTrigger: 0,
     }),
@@ -50,28 +48,22 @@ export const useGameStore = defineStore('game', {
 
         winnerName(state): string {
             const _ = state.updateTrigger
-            if (!state.round) return ''
-            const winner = this.round!.winner()
-            return winner === undefined ? '' : state.round.player(winner)
+            if (!this.round) return ''
+            const winner = this.round.winner()
+            return winner === undefined ? '' : state.round!.player(winner)
+        },
+
+        hasEnded(state): boolean {
+            const _ = state.updateTrigger
+            return !!state.round?.hasEnded()
         }
     },
 
     actions: {
-        startGame() {
-            const players = ['You']
-            for (let i = 1; i <= this.botCount; i++) {
-                players.push(`Bot ${i}`)
-            }
-
+        startGame(botCount: number) {
+            const players = ['You', ...Array.from({length: botCount}, (_, i) => `Bot ${i + 1}`)]
             this.round = createRound(players, players.length - 1)
-            this.screen = 'game'
             this.updateTrigger++
-        },
-
-        checkGameStatus() {
-            if (this.round && this.round.hasEnded()) {
-                this.screen = 'result'
-            }
         },
 
         playHumanCard(index: number, color?: Color) {
@@ -79,7 +71,6 @@ export const useGameStore = defineStore('game', {
             try {
                 this.round.play(index, color)
                 this.updateTrigger++
-                this.checkGameStatus()
             } catch (error) {
                 console.error(error)
                 this.updateTrigger++
@@ -100,14 +91,7 @@ export const useGameStore = defineStore('game', {
 
             this.round.draw()
             this.updateTrigger++
-            this.checkGameStatus()
         },
 
-        formatCard(card: Card | undefined) {
-            if (!card) return 'Sin carta'
-            if (card.type === 'NUMBERED') return `${card.color} ${card.number}`
-            if (card.type === 'WILD' || card.type === 'WILD DRAW') return card.type
-            return `${card.color} ${card.type}`
-        }
     }
 })
