@@ -119,7 +119,8 @@ class RoundModel implements Round {
     };
 
     canPlayAny() {
-        return this.turn !== undefined && this.hands[this.turn].some(c => this.legal(c, this.hands[this.turn]))
+        const turn = this.turn;
+        return turn !== undefined && this.hands[turn].some(c => this.legal(c, this.hands[turn]))
     }
 
     play(index: number, color?: Color) {
@@ -158,7 +159,7 @@ class RoundModel implements Round {
         } else if (c.type === 'SKIP') this.advance(this.playerCount === 2 ? 0 : 2); else if (c.type === 'DRAW' || c.type === 'WILD DRAW') {
             this.advance();
             this.take(c.type === 'DRAW' ? 2 : 4, this.turn!);
-            this.advance(this.playerCount === 2 ? 0 : 1)
+            this.advance()
         } else this.advance();
         return c
     }
@@ -232,7 +233,7 @@ class RoundModel implements Round {
         return c.type === 'WILD' || c.type === 'WILD DRAW'
             || ('color' in c && c.color === this.current)
             || (c.type === 'NUMBERED' && t?.type === 'NUMBERED' && c.number === t.number)
-            || (c.type !== 'NUMBERED' && c.type !== 'WILD' && c.type !== 'WILD DRAW' && c.type === t?.type)
+            || (c.type !== 'NUMBERED' && c.type === t?.type)
     }
 
     private legal(c: Card, h: Card[]) {
