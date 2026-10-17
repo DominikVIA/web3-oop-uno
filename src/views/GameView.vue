@@ -1,3 +1,4 @@
+<!-- src/views/GameView.vue -->
 <template>
   <section v-if="game.round">
     <p>Turn: <strong>{{ game.currentPlayerName }}</strong></p>
@@ -11,9 +12,14 @@
 
       <div>
         <h2>Bots hands</h2>
-        <p v-for="bot in game.bots" :key="bot.name">
-          {{ bot.name }}: {{ bot.cardCount }} cards
-        </p>
+        <CardCountDisplay
+            v-for="bot in game.bots"
+            :key="bot.name"
+            :can-catch="game.round.hasMissedUno(bot.index)"
+            :card-count="bot.cardCount"
+            :player-name="bot.name"
+            @catch-uno="catchBot(bot.index)"
+        />
       </div>
     </div>
 
@@ -23,6 +29,7 @@
         :can-play-any="game.round.canPlayAny()"
         :colors="colors"
         :hand="game.myHand"
+        :has-said-uno="game.hasUserSaidUno"
         :pending-wild-index="pendingWildIndex"
         @say-uno="game.sayUno()"
         @select-card="selectCard"
@@ -41,10 +48,11 @@
 import {useGameStore} from '../stores/useGameStore.ts'
 import Card from '../components/Card.vue'
 import PlayerHand from '../components/PlayerHand.vue'
+import CardCountDisplay from '../components/CardCountDisplay.vue'
 
 export default {
   name: 'GameView',
-  components: {Card, PlayerHand},
+  components: {Card, PlayerHand, CardCountDisplay},
   data() {
     return {
       game: useGameStore(),
@@ -121,22 +129,26 @@ export default {
       const playerIndex = this.game.currentPlayer
       if (playerIndex === undefined || playerIndex === 0) return
 
+      const accusedIndex = Array.from({length: this.game.round.playerCount}, (_, i) => i)
+          .find(i => i !== playerIndex && this.game.round.hasMissedUno(i));
+
       const hand = this.game.round.playerHand(playerIndex)
       const legalIndices = hand.map((_, index) => index).filter(index => this.game.round.canPlay(index))
-
-      if (legalIndices.length === 0) {
-        this.game.round.draw()
-        this.game.updateTrigger++
-        this.checkAndRedirect()
-        window.setTimeout(() => this.runBotTurn(), 300)
-        return
-      }
 
       if (this.worker) {
         this.worker.postMessage({
           hand: hand.map(card => ({...card})),
-          legalIndices
+          legalIndices,
+          accusedIndex
         })
+      }
+    },
+
+    catchBot(accusedIndex) {
+      if (!this.game.round) return
+      const success = this.game.round.catchUnoFailure({accuser: 0, accused: accusedIndex})
+      if (success) {
+        this.game.updateTrigger++
       }
     },
 
@@ -145,6 +157,14 @@ export default {
 
       const playerIndex = this.game.currentPlayer
       if (playerIndex === undefined || playerIndex === 0) return
+
+      if (data.action === 'catch') {
+        this.game.round.catchUnoFailure({accuser: playerIndex, accused: data.accusedIndex})
+        this.game.updateTrigger++
+        this.checkAndRedirect()
+        window.setTimeout(() => this.runBotTurn(), 300)
+        return
+      }
 
       if (data.action === 'draw') {
         this.game.round.draw()
@@ -155,8 +175,7 @@ export default {
       }
 
       try {
-        const hand = this.game.round.playerHand(playerIndex)
-        if (hand.length === 2) {
+        if (data.sayUno) {
           this.game.round.sayUno(playerIndex)
         }
 
@@ -169,7 +188,7 @@ export default {
         this.game.updateTrigger++
         this.checkAndRedirect()
       }
-    }
+    },
   }
 }
 </script>

@@ -1,4 +1,3 @@
-<!-- src/components/PlayerHand.vue -->
 <template>
   <div class="human-turn">
     <h2>Your hand</h2>
@@ -7,8 +6,12 @@
       You have 2 cards left! Say "UNO" before playing a card when you have two cards left
     </p>
 
-    <button v-if="hand.length === 2" class="uno-button" @click="$emit('say-uno')">
-      Say UNO!
+    <button
+        v-if="hand.length === 2"
+        :disabled="hasSaidUno"
+        class="uno-button"
+        @click="$emit('say-uno')">
+      {{ hasSaidUno ? 'UNO Called!' : 'Say UNO!' }}
     </button>
 
     <div class="hand">
@@ -21,7 +24,6 @@
       />
     </div>
 
-    <!-- Isolated ColorPicker Component -->
     <ColorPicker
         v-if="pendingWildIndex !== null"
         :colors="colors"
@@ -46,7 +48,8 @@ export default {
     canPlay: {type: Function, required: true},
     canPlayAny: {type: Boolean, required: true},
     pendingWildIndex: {type: Number, default: null},
-    colors: {type: Array, required: true}
+    colors: {type: Array, required: true},
+    hasSaidUno: {type: Boolean, default: false} // <-- New prop
   }
 }
 </script>

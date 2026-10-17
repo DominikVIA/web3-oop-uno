@@ -42,6 +42,7 @@ export const useGameStore = defineStore('game', {
             const memento = state.round.toMemento()
             return memento.players.map((name, index) => ({
                 name,
+                index,
                 cardCount: state.round!.playerHand(index).length
             })).filter((_, index) => index !== 0)
         },
@@ -56,7 +57,12 @@ export const useGameStore = defineStore('game', {
         hasEnded(state): boolean {
             const _ = state.updateTrigger
             return !!state.round?.hasEnded()
-        }
+        },
+
+        hasUserSaidUno(state): boolean {
+            const _ = state.updateTrigger
+            return state.round ? state.round.hasSaidUno(0) : false
+        },
     },
 
     actions: {
@@ -81,6 +87,7 @@ export const useGameStore = defineStore('game', {
             if (!this.round) return
             try {
                 this.round.sayUno(0)
+                this.updateTrigger++
             } catch (error) {
                 console.error(error)
             }
