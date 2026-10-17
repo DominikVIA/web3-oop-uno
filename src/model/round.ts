@@ -48,6 +48,10 @@ export interface Round {
     catchUnoFailure(a: { accuser: number, accused: number }): boolean;
 
     toMemento(): RoundMemento
+
+    hasSaidUno(i: number): boolean
+
+    hasMissedUno(i: number): boolean
 }
 
 const okColor = (x: unknown): x is Color => (colors as readonly unknown[]).includes(x);
@@ -82,41 +86,43 @@ class RoundModel implements Round {
         this.dir = m.currentDirection;
         this.drawD = createDeckFromMemento(m.drawPile);
         this.disc = createDeckFromMemento(m.discardPile);
+
         const ws = this.hands.map((h, i) => h.length === 0 ? i : -1).filter(i => i >= 0);
         if (ws.length > 1) throw Error('Multiple winners');
         this.ended = ws[0];
+
         if (this.ended === undefined) {
             if (!Number.isInteger(m.playerInTurn) || m.playerInTurn! < 0 || m.playerInTurn! >= this.playerCount) throw Error('Invalid turn');
-            this.turn = m.playerInTurn
+            this.turn = m.playerInTurn;
         }
     }
 
     player(i: number) {
         this.check(i);
-        return this._players[i]
-    };
+        return this._players[i];
+    }
 
     playerHand(i: number) {
         this.check(i);
-        return this.hands[i]
-    };
+        return this.hands[i];
+    }
 
     drawPile() {
-        return this.drawD
-    };
+        return this.drawD;
+    }
 
     discardPile() {
-        return this.disc
-    };
+        return this.disc;
+    }
 
     playerInTurn() {
-        return this.turn
+        return this.turn;
     }
 
     canPlay(index: number) {
         if (this.turn === undefined || !Number.isInteger(index) || index < 0 || index >= this.hands[this.turn].length) return false;
-        return this.legal(this.hands[this.turn][index], this.hands[this.turn])
-    };
+        return this.legal(this.hands[this.turn][index], this.hands[this.turn]);
+    }
 
     canPlayAny() {
         const turn = this.turn;
@@ -126,82 +132,95 @@ class RoundModel implements Round {
     play(index: number, color?: Color) {
         if (this.turn === undefined) throw Error('Round ended');
         if (!Number.isInteger(index) || index < 0 || index >= this.hands[this.turn].length) throw Error('Card out of bounds');
+
         const p = this.turn;
-        for (const n of this.said) if (n !== p) this.said.delete(n);
-        if (this.activeUno !== undefined && this.activeUno !== p) {
-            this.missed.delete(this.activeUno);
-            this.activeUno = undefined
+        this.resetTurnCleanup(p);
+
+        const h = this.hands[p];
+        const c = h[index];
+
+        if (!this.legal(c, h) || ((c.type === 'WILD' || c.type === 'WILD DRAW') && !okColor(color)) || ((c.type !== 'WILD' && c.type !== 'WILD DRAW') && color !== undefined)) {
+            throw Error('Illegal play');
         }
-        const h = this.hands[p], c = h[index];
-        if (!this.legal(c, h) || ((c.type === 'WILD' || c.type === 'WILD DRAW') && !okColor(color)) || ((c.type !== 'WILD' && c.type !== 'WILD DRAW') && color !== undefined)) throw Error('Illegal play');
+
+        const willHaveOneCard = (h.length - 1 === 1);
+
         h.splice(index, 1);
         this.disc.add(c);
         this.missed.delete(p);
-        if (h.length === 1 && !this.said.has(p)) {
+
+        if (willHaveOneCard && !this.said.has(p)) {
             this.missed.add(p);
-            this.activeUno = p
+            this.activeUno = p;
         }
         this.said.delete(p);
-        if ('color' in c) this.current = c.color; else if (c.type === 'WILD' || c.type === 'WILD DRAW') this.current = color!;
+
+        if ('color' in c) this.current = c.color;
+        else if (c.type === 'WILD' || c.type === 'WILD DRAW') this.current = color!;
+
         if (h.length === 0) {
             if (c.type === 'DRAW' || c.type === 'WILD DRAW') {
                 this.advance();
-                this.take(c.type === 'DRAW' ? 2 : 4, this.turn!)
+                this.take(c.type === 'DRAW' ? 2 : 4, this.turn!);
             }
             this.ended = p;
             this.turn = undefined;
             this.callbacks.forEach(cb => cb({winner: p}));
-            return c
+            return c;
         }
+
         if (c.type === 'REVERSE') {
             this.dir = this.dir === 'clockwise' ? 'counterclockwise' : 'clockwise';
-            this.advance(this.playerCount === 2 ? 0 : 1)
-        } else if (c.type === 'SKIP') this.advance(this.playerCount === 2 ? 0 : 2); else if (c.type === 'DRAW' || c.type === 'WILD DRAW') {
+            this.advance(this.playerCount === 2 ? 0 : 1);
+        } else if (c.type === 'SKIP') {
+            this.advance(this.playerCount === 2 ? 0 : 2);
+        } else if (c.type === 'DRAW' || c.type === 'WILD DRAW') {
             this.advance();
             this.take(c.type === 'DRAW' ? 2 : 4, this.turn!);
-            this.advance()
-        } else this.advance();
-        return c
+            this.advance();
+        } else {
+            this.advance();
+        }
+
+        return c;
     }
 
     draw() {
         if (this.turn === undefined) throw Error('Round ended');
         const p = this.turn;
-        for (const n of this.said) if (n !== p) this.said.delete(n);
-        if (this.activeUno !== undefined && this.activeUno !== p) {
-            this.missed.delete(this.activeUno);
-            this.activeUno = undefined
-        }
+        this.resetTurnCleanup(p);
+
         this.take(1, p);
         const c = this.hands[p].at(-1);
         const playable = !!c && this.legal(c, this.hands[p]);
         this.recycle();
+
         if (!playable) this.advance();
-        return c
-    };
+        return c;
+    }
 
     hasEnded() {
-        return this.ended !== undefined
-    };
+        return this.ended !== undefined;
+    }
 
     winner() {
-        return this.ended
-    };
+        return this.ended;
+    }
 
     score() {
-        return this.ended === undefined ? undefined : this.hands.flat().reduce((s, c) => s + cardPoints(c), 0)
-    };
+        return this.ended === undefined ? undefined : this.hands.flat().reduce((s, c) => s + cardPoints(c), 0);
+    }
 
     onEnd(cb: (e: { winner: number }) => void) {
-        this.callbacks.push(cb)
-    };
+        this.callbacks.push(cb);
+    }
 
     sayUno(i: number) {
         this.check(i);
         if (this.turn === undefined) throw Error('Round ended');
         this.said.add(i);
-        this.missed.delete(i)
-    };
+        this.missed.delete(i);
+    }
 
     catchUnoFailure({accused, accuser}: { accused: number, accuser: number }) {
         this.check(accused);
@@ -209,10 +228,20 @@ class RoundModel implements Round {
         if (!this.missed.has(accused)) return false;
         this.missed.delete(accused);
         this.take(4, accused);
-        return true
-    };
+        return true;
+    }
 
-    toMemento() {
+    hasSaidUno(i: number) {
+        this.check(i);
+        return this.said.has(i);
+    }
+
+    hasMissedUno(i: number) {
+        this.check(i);
+        return this.missed.has(i);
+    }
+
+    toMemento(): RoundMemento {
         return {
             players: this._players,
             hands: this.hands.map(h => h.map(c => ({...c}))),
@@ -220,29 +249,42 @@ class RoundModel implements Round {
             discardPile: this.disc.toMemento(),
             currentColor: this.current,
             currentDirection: this.dir,
-            dealer: this.dealer, ...(this.turn === undefined ? {} : {playerInTurn: this.turn})
-        }
+            dealer: this.dealer,
+            ...(this.turn === undefined ? {} : {playerInTurn: this.turn})
+        };
     }
 
     private check(i: number) {
-        if (!Number.isInteger(i) || i < 0 || i >= this.playerCount) throw Error('Player out of bounds')
-    };
+        if (!Number.isInteger(i) || i < 0 || i >= this.playerCount) throw Error('Player out of bounds');
+    }
+
+    private resetTurnCleanup(p: number) {
+        for (const n of this.said) {
+            if (n !== p) this.said.delete(n);
+        }
+        if (this.activeUno !== undefined && this.activeUno !== p) {
+            this.missed.delete(this.activeUno);
+            this.activeUno = undefined;
+        }
+    }
 
     private matches(c: Card) {
         const t = this.disc.top();
         return c.type === 'WILD' || c.type === 'WILD DRAW'
             || ('color' in c && c.color === this.current)
             || (c.type === 'NUMBERED' && t?.type === 'NUMBERED' && c.number === t.number)
-            || (c.type !== 'NUMBERED' && c.type === t?.type)
+            || (c.type !== 'NUMBERED' && c.type === t?.type);
     }
 
     private legal(c: Card, h: Card[]) {
-        return this.matches(c) && (c.type !== 'WILD DRAW' || !h.some(x => 'color' in x && x.color === this.current))
-    };
+        return this.matches(c) && (c.type !== 'WILD DRAW' || !h.some(x => 'color' in x && x.color === this.current));
+    }
 
     private advance(n = 1) {
-        if (this.turn !== undefined) this.turn = mod(this.turn + (this.dir === 'clockwise' ? n : -n), this.playerCount)
-    };
+        if (this.turn !== undefined) {
+            this.turn = mod(this.turn + (this.dir === 'clockwise' ? n : -n), this.playerCount);
+        }
+    }
 
     private recycle() {
         if (this.drawD.size === 0 && this.disc.size > 1) {
@@ -251,15 +293,15 @@ class RoundModel implements Round {
             while (this.disc.size > 0) a.push(this.disc.deal()!);
             this.drawD = createDeck(a);
             this.drawD.shuffle(this.shuffler);
-            this.disc = createDeck([top])
+            this.disc = createDeck([top]);
         }
-    };
+    }
 
     private take(n: number, p: number) {
         for (let i = 0; i < n; i++) {
             this.recycle();
             const c = this.drawD.deal();
-            if (c) this.hands[p].push(c)
+            if (c) this.hands[p].push(c);
         }
     }
 }
@@ -270,15 +312,18 @@ export function createRound(players: string[], dealer: number, shuffler: Shuffle
     const d = createInitialDeck();
     d.shuffle(shuffler);
     const hands = players.map(() => Array.from({length: cardsPerPlayer}, () => d.deal()!));
+
     let top = d.deal()!;
     while (top.type === 'WILD' || top.type === 'WILD DRAW') {
         d.add(top);
         d.shuffle(shuffler);
-        top = d.deal()!
+        top = d.deal()!;
     }
+
     let turn = mod(dealer + 1, players.length);
     if (top.type === 'REVERSE') turn = mod(dealer - 1, players.length);
     if (top.type === 'SKIP') turn = mod(dealer + 2, players.length);
+
     const r = new RoundModel({
         players,
         hands,
@@ -289,13 +334,14 @@ export function createRound(players: string[], dealer: number, shuffler: Shuffle
         dealer,
         playerInTurn: turn
     }, shuffler);
+
     if (top.type === 'DRAW') {
         (r as any).take(2, turn);
-        (r as any).advance()
+        (r as any).advance();
     }
-    return r
+    return r;
 }
 
 export function createRoundFromMemento(m: RoundMemento, shuffler: Shuffler<Card> = standardShuffler): Round {
-    return new RoundModel(m, shuffler)
+    return new RoundModel(m, shuffler);
 }
