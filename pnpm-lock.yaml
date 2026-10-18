@@ -111,7 +111,7 @@ importers:
     dependencies:
       '@apollo/client':
         specifier: ^4.3.4
-        version: 4.3.4(graphql@17.0.2)(rxjs@7.8.2)
+        version: 4.3.4(graphql-ws@6.4.1(graphql@17.0.2)(ws@8.22.0))(graphql@17.0.2)(rxjs@7.8.2)
       '@apollo/server':
         specifier: ^5.5.1
         version: 5.5.1(graphql@17.0.2)(supports-color@3.1.2)
@@ -121,6 +121,12 @@ importers:
       graphql:
         specifier: ^17.0.2
         version: 17.0.2
+      graphql-subscriptions:
+        specifier: ^3.0.0
+        version: 3.0.0(graphql@17.0.2)
+      graphql-ws:
+        specifier: ^6.4.1
+        version: 6.4.1(graphql@17.0.2)(ws@8.22.0)
       pinia:
         specifier: ^4.1.0
         version: 4.1.0(@vue/devtools-api@8.2.1)(typescript@5.9.3)(vue@3.5.44(typescript@5.9.3))
@@ -3743,11 +3749,32 @@ packages:
   graceful-readlink@1.0.1:
     resolution: {integrity: sha512-8tLu60LgxF6XpdbK8OW3FA+IfTNBn1ZHGHKF4KQbEeSkajYw5PlYJcKluntgegDPTg8UkHjpet1T82vk6TQ68w==}
 
+  graphql-subscriptions@3.0.0:
+    resolution: {integrity: sha512-kZCdevgmzDjGAOqH7GlDmQXYAkuHoKpMlJrqF40HMPhUhM5ZWSFSxCwD/nSi6AkaijmMfsFhoJRGJ27UseCvRA==}
+    peerDependencies:
+      graphql: ^15.7.2 || ^16.0.0
+
   graphql-tag@2.12.7:
     resolution: {integrity: sha512-xnE/NFzy+0eIesvAsREJZ284zTl/wYuBAvpsFSDhRGRdRHdnE90M21Q3xAWyYInb0J756c6x0pIQ62+vtvOs1Q==}
     engines: {node: '>=10'}
     peerDependencies:
       graphql: ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0
+
+  graphql-ws@6.4.1:
+    resolution: {integrity: sha512-a3MzY5u+tCHHwuyimzxMAHZQ6TY7bOpkQURtKXE5kKIkBdsZ2axlb7sLzMpzGFO4guhws9FyMVB1onyX58pO4w==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@fastify/websocket': ^10 || ^11
+      crossws: ~0.3 || ~0.4
+      graphql: ^15.10.1 || ^16 || ^17
+      ws: ^8
+    peerDependenciesMeta:
+      '@fastify/websocket':
+        optional: true
+      crossws:
+        optional: true
+      ws:
+        optional: true
 
   graphql@17.0.2:
     resolution: {integrity: sha512-FRWbddMxfkjiB7z+aQDWIR+E34xo9I8c9mtK2RPv8PmMzKRvrdsreHL/Ui/TmwHJfhHChEtsFPyMHKI+xuarQQ==}
@@ -6316,7 +6343,7 @@ snapshots:
     dependencies:
       graphql: 17.0.2
 
-  '@apollo/client@4.3.4(graphql@17.0.2)(rxjs@7.8.2)':
+  '@apollo/client@4.3.4(graphql-ws@6.4.1(graphql@17.0.2)(ws@8.22.0))(graphql@17.0.2)(rxjs@7.8.2)':
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@17.0.2)
       '@wry/caches': 1.0.1
@@ -6327,6 +6354,8 @@ snapshots:
       optimism: 0.18.1
       rxjs: 7.8.2
       tslib: 2.8.1
+    optionalDependencies:
+      graphql-ws: 6.4.1(graphql@17.0.2)(ws@8.22.0)
 
   '@apollo/protobufjs@1.2.8':
     dependencies:
@@ -10674,10 +10703,20 @@ snapshots:
 
   graceful-readlink@1.0.1: {}
 
+  graphql-subscriptions@3.0.0(graphql@17.0.2):
+    dependencies:
+      graphql: 17.0.2
+
   graphql-tag@2.12.7(graphql@17.0.2):
     dependencies:
       graphql: 17.0.2
       tslib: 2.8.1
+
+  graphql-ws@6.4.1(graphql@17.0.2)(ws@8.22.0):
+    dependencies:
+      graphql: 17.0.2
+    optionalDependencies:
+      ws: 8.22.0
 
   graphql@17.0.2: {}
 
