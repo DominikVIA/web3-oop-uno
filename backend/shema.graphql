@@ -1,0 +1,106 @@
+enum Color {
+  BLUE
+  GREEN
+  RED
+  YELLOW
+}
+
+enum CardType {
+  NUMBERED
+  SKIP
+  REVERSE
+  DRAW
+  WILD
+  WILD DRAW
+}
+
+enum GameStatus {
+  WAITING     # Pre-game lobby (waiting for players to join)
+  ONGOING     # Match is currently being played
+  WON         # Completed and the user won
+  LOST        # Completed and the user lost
+}
+
+type User {
+  id: ID!
+  username: String!
+}
+
+type AuthPayload {
+  token: String!
+  user: User!
+}
+
+type Card {
+  type: CardType!
+  color: Color
+  number: Int
+}
+
+type PlayerState {
+  id: ID!
+  user: User!
+  score: Int!
+  handSize: Int!
+  hasSaidUno: Boolean!
+}
+
+type Round {
+  playerCount: Int!
+  dealer: Int!
+  currentColor: Color!
+  currentDirection: String!
+  playerInTurn: Int
+  topDiscardCard: Card
+  players: [PlayerState!]!
+  myHand: [Card!]! # Securely filtered for the requesting player
+  hasEnded: Boolean!
+  winner: Int
+}
+
+type Game {
+  id: ID!
+  host: User!
+  players: [User!]!
+  targetScore: Int!
+  scores: [Int!]!
+  status: GameStatus!
+  winner: Int
+  currentRound: Round
+}
+
+type Query {
+  # User identification check
+  me: User!
+
+  # Fetch details for a specific game/lobby
+  getGame(gameId: ID!): Game!
+
+  # Fetch all games for the logged-in user, optionally filtered by status
+  myGames(status: GameStatus): [Game!]!
+}
+
+type Mutation {
+  # 1. User Identification
+  register(username: String!, password: String!): AuthPayload!
+  login(username: String!, password: String!): AuthPayload!
+
+  # 2. Game Creation & Lobby Management
+  createGame(targetScore: Int): Game!
+  joinGame(gameId: ID!): Game!
+  startGame(gameId: ID!): Game! # Host triggers this once players have joined
+
+  # 3. In-Game Actions
+  playCard(gameId: ID!, cardIndex: Int!, color: Color): Game!
+  drawCard(gameId: ID!): Game!
+  sayUno(gameId: ID!): Game!
+  catchUnoFailure(gameId: ID!, accusedIndex: Int!): Game!
+}
+
+type Subscription {
+  # Notifies participants when players join/leave the pre-game lobby or when it starts
+  lobbyUpdated(gameId: ID!): Game!
+
+  # Notifies participants of card plays, draws, and turn shifts during a match
+  gameUpdated(gameId: ID!): Game!
+}
