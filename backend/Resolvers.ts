@@ -1,6 +1,7 @@
 import {RoomManager} from './services/RoomManager'
 import {AuthService} from './services/AuthService'
 import {PubSub} from 'graphql-subscriptions'
+import type {Color} from '../src/model/deck'
 
 const pubsub = new PubSub()
 const roomManager = new RoomManager()
@@ -13,7 +14,7 @@ function formatGameForUser(game: any, currentUserId: string) {
     const roundMemento = round ? round.toMemento() : null;
 
     const playerNames = memento.players;
-    const userPlayerIndex = playerNames.findIndex((name: string) => name === currentUserId); // Assuming username/id match for simplicity
+    const userPlayerIndex = playerNames.findIndex((name: string) => name === currentUserId);
 
     return {
         id: game.id || 'room-id',
@@ -47,32 +48,32 @@ function formatGameForUser(game: any, currentUserId: string) {
 
 export const resolvers = {
     Query: {
-        me: async (_, __, {currentUser}) => {
+        me: async (_: unknown, __: unknown, {currentUser}: { currentUser: any }) => {
             if (!currentUser) throw new Error('Not authenticated')
             return currentUser
         },
 
-        getGame: (_, {gameId}, {currentUser}) => {
+        getGame: (_: unknown, {gameId}: { gameId: string }, {currentUser}: { currentUser: any }) => {
             const game = roomManager.getRoom(gameId)
             return formatGameForUser(game, currentUser.username)
         },
 
-        myGames: (_, {status}, {currentUser}) => {
+        myGames: (_: unknown, {status}: { status?: any }, {currentUser}: { currentUser: any }) => {
             const games = roomManager.getGamesForUser(currentUser.username, status)
             return games.map(g => formatGameForUser(g, currentUser.username))
         }
     },
 
     Mutation: {
-        register: async (_, {username, password}) => {
+        register: async (_: unknown, {username, password}: { username: string; password: string }) => {
             return await authService.register(username, password)
         },
 
-        login: async (_, {username, password}) => {
+        login: async (_: unknown, {username, password}: { username: string; password: string }) => {
             return await authService.login(username, password)
         },
 
-        createGame: (_, {targetScore}, {currentUser}) => {
+        createGame: (_: unknown, {targetScore}: { targetScore?: number }, {currentUser}: { currentUser: any }) => {
             if (!currentUser) throw new Error('Not authenticated')
             const gameId = crypto.randomUUID().slice(0, 8)
 
@@ -80,11 +81,10 @@ export const resolvers = {
             return formatGameForUser(game, currentUser.username)
         },
 
-        joinGame: (_, {gameId}, {currentUser}) => {
+        joinGame: (_: unknown, {gameId}: { gameId: string }, {currentUser}: { currentUser: any }) => {
             if (!currentUser) throw new Error('Not authenticated')
             const game = roomManager.getRoom(gameId)
 
-            // Reference to RoomManager method to add player to lobby
             roomManager.addPlayerToRoom(gameId, currentUser.username)
 
             const formattedGame = formatGameForUser(game, currentUser.username)
@@ -92,9 +92,9 @@ export const resolvers = {
             return formattedGame
         },
 
-        startGame: (_, {gameId}, {currentUser}) => {
+        startGame: (_: unknown, {gameId}: { gameId: string }, {currentUser}: { currentUser: any }) => {
             const game = roomManager.getRoom(gameId)
-            roomManager.startRoomGame(gameId) // Transitions status to ONGOING
+            roomManager.startRoomGame(gameId)
 
             const formattedGame = formatGameForUser(game, currentUser.username)
             pubsub.publish(`LOBBY_UPDATED_${gameId}`, {lobbyUpdated: formattedGame})
@@ -102,14 +102,18 @@ export const resolvers = {
             return formattedGame
         },
 
-        playCard: (_, {gameId, cardIndex, color}, {currentUser}) => {
+        playCard: (_: unknown, {gameId, cardIndex, color}: {
+            gameId: string;
+            cardIndex: number;
+            color?: Color
+        }, {currentUser}: { currentUser: any }) => {
             const room = roomManager.getRoom(gameId)
             const game = room.gameInstance
             if (!game) throw new Error('No active game')
             const round = game.currentRound()
             if (!round) throw new Error('No active round')
 
-            const playerNames = game.toMemento().players // or stored player mapping
+            const playerNames = game.toMemento().players
             const playerIndex = playerNames.findIndex((name: string) => name === currentUser.username)
             if (round.playerInTurn() !== playerIndex) throw new Error('Not your turn')
 
@@ -120,7 +124,7 @@ export const resolvers = {
             return formattedGame
         },
 
-        drawCard: (_, {gameId}, {currentUser}) => {
+        drawCard: (_: unknown, {gameId}: { gameId: string }, {currentUser}: { currentUser: any }) => {
             const room = roomManager.getRoom(gameId)
             const game = room.gameInstance
             if (!game) throw new Error('No active game')
@@ -138,7 +142,7 @@ export const resolvers = {
             return formattedGame
         },
 
-        sayUno: (_, {gameId}, {currentUser}) => {
+        sayUno: (_: unknown, {gameId}: { gameId: string }, {currentUser}: { currentUser: any }) => {
             const room = roomManager.getRoom(gameId)
             const game = room.gameInstance
             if (!game) throw new Error('No active game')
@@ -155,7 +159,9 @@ export const resolvers = {
             return formattedGame
         },
 
-        catchUnoFailure: (_, {gameId, accusedIndex}, {currentUser}) => {
+        catchUnoFailure: (_: unknown, {gameId, accusedIndex}: { gameId: string; accusedIndex: number }, {currentUser}: {
+            currentUser: any
+        }) => {
             const room = roomManager.getRoom(gameId)
             const game = room.gameInstance
             if (!game) throw new Error('No active game')
@@ -175,10 +181,14 @@ export const resolvers = {
 
     Subscription: {
         lobbyUpdated: {
-            subscribe: (_, {gameId}) => pubsub.asyncIterableIterator([`LOBBY_UPDATED_${gameId}`])
+            subscribe: (_: unknown, {gameId}: {
+                gameId: string
+            }) => pubsub.asyncIterableIterator([`LOBBY_UPDATED_${gameId}`])
         },
         gameUpdated: {
-            subscribe: (_, {gameId}) => pubsub.asyncIterableIterator([`GAME_UPDATED_${gameId}`])
+            subscribe: (_: unknown, {gameId}: {
+                gameId: string
+            }) => pubsub.asyncIterableIterator([`GAME_UPDATED_${gameId}`])
         }
     }
 }
