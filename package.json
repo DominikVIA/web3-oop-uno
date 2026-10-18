@@ -7,26 +7,39 @@
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint",
-    "test": "jest"
+    "test": "jest",
+    "start": "tsx backend/Server.ts"
   },
   "main": "index.js",
   "dependencies": {
     "@apollo/client": "^4.3.4",
     "@apollo/server": "^5.5.1",
+    "@as-integrations/express5": "^1.1.2",
+    "@graphql-tools/schema": "^10.1.5",
+    "bcryptjs": "^3.0.3",
     "core-js": "^3.8.3",
+    "cors": "^2.8.6",
+    "express": "^5.3.0",
     "graphql": "^17.0.2",
     "graphql-subscriptions": "^3.0.0",
     "graphql-ws": "^6.4.1",
+    "jsonwebtoken": "^9.0.3",
     "pinia": "^4.1.0",
     "vue": "^3.2.13",
     "vue-router": "^5.4.0",
-    "vue.js": "^0.3.2"
+    "vue.js": "^0.3.2",
+    "ws": "^8.22.0"
   },
   "devDependencies": {
     "@babel/core": "^8.0.7",
     "@babel/eslint-parser": "^7.12.16",
     "@babel/preset-env": "^8.0.7",
     "@babel/preset-typescript": "^8.0.7",
+    "@types/bcryptjs": "^3.0.0",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/ws": "^8.18.2",
     "@vue/cli-plugin-babel": "~5.0.0",
     "@vue/cli-plugin-eslint": "~5.0.0",
     "@vue/cli-plugin-typescript": "~5.0.9",
@@ -36,6 +49,7 @@
     "eslint-plugin-vue": "^8.0.3",
     "jest": "^30.5.2",
     "ts-loader": "^9.6.2",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3"
   },
   "eslintConfig": {

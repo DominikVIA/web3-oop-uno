@@ -2,5 +2,6 @@ allowBuilds:
   '@apollo/protobufjs': true
   '@parcel/watcher': true
   core-js: false
+  esbuild: true
   unrs-resolver: true
   yorkie: true
